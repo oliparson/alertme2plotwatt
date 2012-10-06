@@ -6,7 +6,7 @@ import urllib
 import urllib2
 import cookielib
 import json
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from plotwattapi import Plotwatt
 import numpy as np
 
@@ -201,45 +201,46 @@ PW_HOUSE_ID = ''
 PW_API_KEY = ''
 PW_METER_ID = ''
 
-pw = Plotwatt(PW_HOUSE_ID, PW_API_KEY)
+def transfer(USERNAME, PASSWORD, PW_HOUSE_ID, PW_API_KEY, PW_METER_ID): 
+    pw = Plotwatt(PW_HOUSE_ID, PW_API_KEY)
 
-log_in_json = log_in(USERNAME, PASSWORD)
-hub_id = str(log_in_json['hubIds'][0])
-hub_devices = query_hub_devices(USERNAME, hub_id)
-for device in hub_devices:
-    device_name = device['name']
-    device_type = device['type']
-    device_id = device['id']
-    if device_type in DEVICE_CHANNELS.keys() and device_name in DEVICE_NAMES:
-        device_channels = query_devices_channels(USERNAME, hub_id, device_type, device_id)
-        for channel in device_channels:
-            channel_name = channel['name']
-            if channel_name in DEVICE_CHANNELS[device_type]:
-                if channel_name == 'power':
-                    if device_type == 'MeterReader':
-                        INTERVAL = '1'
-                    elif device_type == 'SmartPlug':
-                        INTERVAL = '30'
-                else:
-                    INTERVAL = '120'
+    log_in_json = log_in(USERNAME, PASSWORD)
+    hub_id = str(log_in_json['hubIds'][0])
+    hub_devices = query_hub_devices(USERNAME, hub_id)
+    for device in hub_devices:
+        device_name = device['name']
+        device_type = device['type']
+        device_id = device['id']
+        if device_type in DEVICE_CHANNELS.keys() and device_name in DEVICE_NAMES:
+            device_channels = query_devices_channels(USERNAME, hub_id, device_type, device_id)
+            for channel in device_channels:
+                channel_name = channel['name']
+                if channel_name in DEVICE_CHANNELS[device_type]:
+                    if channel_name == 'power':
+                        if device_type == 'MeterReader':
+                            INTERVAL = '1'
+                        elif device_type == 'SmartPlug':
+                            INTERVAL = '30'
+                        else:
+                            INTERVAL = '120'
+			
+			# create a file to log the uploaded data to
+			filename = str(START)+' - '+str(END)+'.csv'
+			#file = open(OUTPUT_DIRECTORY + filename, 'w')
                 
-                # create a file to log the uploaded data to
-                filename = str(START)+' - '+str(END)+'.csv'
-                file = open(OUTPUT_DIRECTORY + filename, 'w')
-                
-                period = (int(time.mktime(END.timetuple()))-int(time.mktime(START.timetuple())))
-                for i in range(period/DOWNLOAD_INTERVAL):
-                    temp_start = START + timedelta(seconds=i*DOWNLOAD_INTERVAL)
-                    temp_end = START + timedelta(seconds=(i+1)*DOWNLOAD_INTERVAL-1)
-                    start_string = str(int(time.mktime(temp_start.timetuple())))
-                    end_string = str(int(time.mktime(temp_end.timetuple())))
-                    print str(datetime2.now()),':',str(temp_start),'->',str(temp_end)
-                    historical_values = query_channel_data(USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
-                    if historical_values:
-                        timestamps,data = parse_json(historical_values)
-                        #write_to_file(timestamps,data,file)
-                        #push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
-                        print data
-                    
-                file.close()
+			period = (int(time.mktime(END.timetuple()))-int(time.mktime(START.timetuple())))
+			for i in range(period/DOWNLOAD_INTERVAL):
+			    temp_start = START + timedelta(seconds=i*DOWNLOAD_INTERVAL)
+			    temp_end = START + timedelta(seconds=(i+1)*DOWNLOAD_INTERVAL-1)
+			    start_string = str(int(time.mktime(temp_start.timetuple())))
+			    end_string = str(int(time.mktime(temp_end.timetuple())))
+			    print str(datetime2.now()),':',str(temp_start),'->',str(temp_end)
+			    historical_values = query_channel_data(USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
+			    if historical_values:
+				timestamps,data = parse_json(historical_values)
+				#write_to_file(timestamps,data,file)
+				#push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
+				#print data
+			    
+			#file.close()
 

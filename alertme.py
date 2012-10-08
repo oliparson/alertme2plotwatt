@@ -6,7 +6,6 @@ import urllib
 import urllib2
 import cookielib
 import json
-#import matplotlib.pyplot as plt
 from plotwattapi import Plotwatt
 import numpy as np
 
@@ -178,11 +177,8 @@ def push_readings_to_pw(pw,PW_METER_ID,data,timestamps):
 # logging directory
 OUTPUT_DIRECTORY = 'energy_data/'
 
-# AlertMe details
-USERNAME = ''
-PASSWORD = ''
-DOWNLOAD_INTERVAL = 3600 # 1 hours
-DEVICE_NAMES = ['HouseMeterReader']
+# AlertMe API settings
+DOWNLOAD_INTERVAL = 3600 # 1 hour
 DEVICE_CHANNELS = {
                    'MeterReader' : ['power'],
                    'Lamp' : [],
@@ -192,27 +188,54 @@ DEVICE_CHANNELS = {
                    'ContactSensor' : [],
                    'SmartPlug' : [],
                    }
-START = datetime2(2012,9,24,0,0,0)
-END = datetime2(2012,9,24,01,0,0)
 OPERATION = 'average'
 
-# PlotWatt details
-PW_HOUSE_ID = ''
-PW_API_KEY = ''
-PW_METER_ID = ''
-
-def transfer(USERNAME, PASSWORD, PW_HOUSE_ID, PW_API_KEY, PW_METER_ID): 
+def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_TIME, AM_DEVICE_NAME=None, PW_METER_ID=None):
+    '''
+    START_TIME - timestamp string in ISO8601
+    END_TIME - timestamp string in ISO8601
+    AM_DEVICE_NAME - AlertMe device name string, required if multiple MeterReaders devices exist
+    PW_METER_ID - PlotWatt meter id int, required if multiple meters exist
+    '''
+    
+    # parse start and end times
+    utc_format = '%Y-%m-%dT%H:%M:%SZ'
+    try:
+        start = datetime2.strptime(START_TIME, utc_format)
+        end = datetime2.strptime(END_TIME, utc_format)
+    except ValueError, e:
+        print 'start or end time not in ',utc_format,'format'
+        return -1
+    
+    # PlotWatt API
     pw = Plotwatt(PW_HOUSE_ID, PW_API_KEY)
+    try:
+        pw.list_meters()
+    except urllib2.HTTPError, e:
+        print 'bad PlotWatt credentials'
+        return -1
+    if not PW_METER_ID:
+        print 'PlotWatt meter not specified'
+        pw_meter_list = pw.list_meters()
+        if len(pw_meter_list) == 0:
+            print 'No PlotWatt meters found. Creating meter'
+            pw_meter_list = pw.create_meters(1)
+        PW_METER_ID = pw_meter_list[0]
+        print 'Using PlotWatt meter ', PW_METER_ID
 
-    log_in_json = log_in(USERNAME, PASSWORD)
+    # AlertMe API
+    log_in_json = log_in(AM_USERNAME, AM_PASSWORD)
+    if not log_in_json:
+        print 'bad AlertMe credentials'
+        return -1
     hub_id = str(log_in_json['hubIds'][0])
-    hub_devices = query_hub_devices(USERNAME, hub_id)
+    hub_devices = query_hub_devices(AM_USERNAME, hub_id)
     for device in hub_devices:
         device_name = device['name']
         device_type = device['type']
         device_id = device['id']
-        if device_type in DEVICE_CHANNELS.keys() and device_name in DEVICE_NAMES:
-            device_channels = query_devices_channels(USERNAME, hub_id, device_type, device_id)
+        if device_type in DEVICE_CHANNELS.keys() and ((not AM_DEVICE_NAME) or device_name == AM_DEVICE_NAME):
+            device_channels = query_devices_channels(AM_USERNAME, hub_id, device_type, device_id)
             for channel in device_channels:
                 channel_name = channel['name']
                 if channel_name in DEVICE_CHANNELS[device_type]:
@@ -225,22 +248,22 @@ def transfer(USERNAME, PASSWORD, PW_HOUSE_ID, PW_API_KEY, PW_METER_ID):
                             INTERVAL = '120'
 			
 			# create a file to log the uploaded data to
-			filename = str(START)+' - '+str(END)+'.csv'
+			filename = str(start)+' - '+str(end)+'.csv'
 			#file = open(OUTPUT_DIRECTORY + filename, 'w')
                 
-			period = (int(time.mktime(END.timetuple()))-int(time.mktime(START.timetuple())))
+			period = (int(time.mktime(end.timetuple()))-int(time.mktime(start.timetuple())))
 			for i in range(period/DOWNLOAD_INTERVAL):
-			    temp_start = START + timedelta(seconds=i*DOWNLOAD_INTERVAL)
-			    temp_end = START + timedelta(seconds=(i+1)*DOWNLOAD_INTERVAL-1)
+			    temp_start = start + timedelta(seconds=i*DOWNLOAD_INTERVAL)
+			    temp_end = start + timedelta(seconds=(i+1)*DOWNLOAD_INTERVAL-1)
 			    start_string = str(int(time.mktime(temp_start.timetuple())))
 			    end_string = str(int(time.mktime(temp_end.timetuple())))
 			    print str(datetime2.now()),':',str(temp_start),'->',str(temp_end)
-			    historical_values = query_channel_data(USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
+			    historical_values = query_channel_data(AM_USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
 			    if historical_values:
-				timestamps,data = parse_json(historical_values)
-				#write_to_file(timestamps,data,file)
-				#push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
-				#print data
+    				timestamps,data = parse_json(historical_values)
+    				#write_to_file(timestamps,data,file)
+    				#push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
+    				#print data
 			    
 			#file.close()
 

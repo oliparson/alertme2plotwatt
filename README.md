@@ -22,6 +22,7 @@ END - timestamp of the end of the interval in the format YYYY-mm-ddTHH:MM:SSZ (e
 
 
 and two optional parameters:
+
 AM_DEVICE_NAME - required if the AlertMe account has more than one MeterReader
 
 PW_METER_ID - required it the PlotWatt account has more than one meter

@@ -247,6 +247,7 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
                         else:
                             INTERVAL = '120'
 			
+            file = open('alertme.log', 'w')
             # loop over hour long intervals downloading and uploading data
 			period = (int(time.mktime(end.timetuple()))-int(time.mktime(start.timetuple())))
 			for i in range(period/DOWNLOAD_INTERVAL):
@@ -254,11 +255,14 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
 			    temp_end = start + timedelta(seconds=(i+1)*DOWNLOAD_INTERVAL-1)
 			    start_string = str(int(time.mktime(temp_start.timetuple())))
 			    end_string = str(int(time.mktime(temp_end.timetuple())))
-			    print str(datetime2.now()),':',str(temp_start),'->',str(temp_end)
 			    historical_values = query_channel_data(AM_USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
 			    if historical_values:
     				timestamps,data = parse_json(historical_values)
     				push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
+                output = str(datetime2.now()),':',str(temp_start),'->',str(temp_end) 
+                print output
+                file.write(output + '\n')
+            file.close()
 
 if __name__ == "__main__":
 

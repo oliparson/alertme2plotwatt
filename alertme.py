@@ -247,10 +247,7 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
                         else:
                             INTERVAL = '120'
 			
-			# create a file to log the uploaded data to
-			filename = str(start)+' - '+str(end)+'.csv'
-			#file = open(OUTPUT_DIRECTORY + filename, 'w')
-                
+            # loop over hour long intervals downloading and uploading data
 			period = (int(time.mktime(end.timetuple()))-int(time.mktime(start.timetuple())))
 			for i in range(period/DOWNLOAD_INTERVAL):
 			    temp_start = start + timedelta(seconds=i*DOWNLOAD_INTERVAL)
@@ -261,9 +258,38 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
 			    historical_values = query_channel_data(AM_USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
 			    if historical_values:
     				timestamps,data = parse_json(historical_values)
-    				#write_to_file(timestamps,data,file)
     				#push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
-    				#print data
-			    
-			#file.close()
 
+if __name__ == "__main__":
+
+    from optparse import OptionParser
+    
+    parser = OptionParser()
+    parser.add_option("-u", "--AM_USERNAME", dest="AM_USERNAME",
+                      help="Username of AlertMe account")
+    parser.add_option("-p", "--AM_PASSWORD", dest="AM_PASSWORD",
+                      help="Password of AlertMe account")
+    parser.add_option("-i", "--PW_HOUSE_ID", dest="PW_HOUSE_ID",
+                      help="House ID of PlotWatt account")
+    parser.add_option("-k", "--PW_API_KEY", dest="PW_API_KEY",
+                      help="API key of PlotWatt account")
+    parser.add_option("", "--START", dest="START",
+                      help="API key of PlotWatt account")
+    parser.add_option("", "--END", dest="END",
+                      help="API key of PlotWatt account")
+    parser.add_option("", "--AM_DEVICE_NAME", dest="AM_DEVICE_NAME",
+                      help="Name of MeterReader of AlertMe account")
+    parser.add_option("", "--PW_METER_ID", dest="PW_METER_ID",
+                      help="API key of PlotWatt account")
+    
+    (options, args) = parser.parse_args()
+    print options
+    
+    transfer(options.AM_USERNAME, 
+             options.AM_PASSWORD, 
+             options.PW_HOUSE_ID, 
+             options.PW_API_KEY, 
+             options.START, 
+             options.END, 
+             AM_DEVICE_NAME=options.AM_DEVICE_NAME,
+             PW_METER_ID=options.PW_METER_ID)

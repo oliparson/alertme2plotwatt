@@ -259,7 +259,7 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
                         if historical_values:
                             timestamps,data = parse_json(historical_values)
                             push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
-                        output = str(datetime2.now()) + ' : ' + str(temp_start) + ' -> ' + str(temp_end)
+                        output = str(datetime2.utcnow()) + ' : ' + str(temp_start) + ' -> ' + str(temp_end)
                         print output
                         file.write(output + '\n')
                     file.close()

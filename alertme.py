@@ -248,7 +248,7 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
                             INTERVAL = '120'
             
                     # loop over hour long intervals downloading and uploading data
-                    file = open('alertme.log','a')
+                    file = open('alertme.log','a+')
                     period = (int(time.mktime(end.timetuple()))-int(time.mktime(start.timetuple())))
                     for i in range(period/DOWNLOAD_INTERVAL):
                         temp_start = start + timedelta(seconds=i*DOWNLOAD_INTERVAL)

@@ -258,7 +258,7 @@ def transfer(AM_USERNAME, AM_PASSWORD, PW_HOUSE_ID, PW_API_KEY, START_TIME, END_
 			    historical_values = query_channel_data(AM_USERNAME, hub_id, device_type, device_id, channel_name, start_string, end_string, INTERVAL, OPERATION)
 			    if historical_values:
     				timestamps,data = parse_json(historical_values)
-    				#push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
+    				push_readings_to_pw(pw, PW_METER_ID,data,timestamps)
 
 if __name__ == "__main__":
 

@@ -1,0 +1,1 @@
+30 * * * *  /home/pi/alertme2plotwatt/alertme.sh >> cron.log 2>&1
